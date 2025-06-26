@@ -1,5 +1,6 @@
 from typing import Any
 import httpx
+import os
 from mcp.server.fastmcp import FastMCP
 
 # Initialize FastMCP server
@@ -15,7 +16,12 @@ async def make_nws_request(url: str) -> dict[str, Any] | None:
         "User-Agent": USER_AGENT,
         "Accept": "application/geo+json"
     }
-    async with httpx.AsyncClient() as client:
+    
+    # Check for corporate certificate bundle
+    ca_bundle = os.environ.get('REQUESTS_CA_BUNDLE') or os.environ.get('CURL_CA_BUNDLE')
+    verify_setting = ca_bundle if ca_bundle and os.path.exists(ca_bundle) else True
+    
+    async with httpx.AsyncClient(verify=verify_setting) as client:
         try:
             response = await client.get(url, headers=headers, timeout=30.0)
             response.raise_for_status()
